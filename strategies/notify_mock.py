@@ -32,5 +32,3 @@ class NotifyMockTask(ITask):
             "message": params["message"]
         }
 
-    def get_param_schema(self):
-        return self.params_schema

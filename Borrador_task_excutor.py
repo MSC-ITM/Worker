@@ -1,19 +1,10 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict
-from Decorator import task_wrapper
+#Template pattern
 
-class ITask(ABC):
-    #@abstractmethod
-    def execute(self, params: dict) -> dict:
-        """Ejecuta la tarea y retorna resultado"""
-        pass
-    
-    #@abstractmethod
-    def validate_params(self, params: dict) -> bool:
-        """Valida parámetros antes de ejecutar"""
-        pass
+from typing import Dict, Any
+from abc  import ABC
 
-    # ======== Hooks opcionales (Template Method) ========
+class TaskExecutor(ABC):
+# ======== Hooks opcionales (Template Method) ========
 
     def before(self, params: Dict[str, Any]):
         """
@@ -37,7 +28,7 @@ class ITask(ABC):
         print(f"[{self.__class__.__name__}] Error durante ejecución: {error}")
 
     # ======== Plantilla de ejecución ========
-    #@task_wrapper
+
     def run(self, context: Dict[str, Any], params: Dict[str, Any]) -> Any:
         """
         Define el ciclo de vida estándar de ejecución de una tarea.
@@ -63,4 +54,3 @@ class ITask(ABC):
         except Exception as e:
             self.on_error(e)
             raise
-

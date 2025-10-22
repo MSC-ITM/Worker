@@ -26,8 +26,3 @@ class HttpGetTask(ITask):
     def execute(self, context, params):
         response = requests.get(params["url"], headers=params.get("headers"))
         return {"status_code": response.status_code, "body": response.text[:500]}
-
-    def get_param_schema(self):
-        return{
-        
-        }

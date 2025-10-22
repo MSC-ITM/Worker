@@ -42,5 +42,3 @@ class TransformSimpleTask(ITask):
         df.to_csv(params["output_path"], index=False)
         return {"output_path": params["output_path"], "rows": len(df)}
 
-    def get_param_schema(self):
-        return self.params_schema

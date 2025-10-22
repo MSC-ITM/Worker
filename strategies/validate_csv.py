@@ -34,5 +34,3 @@ class ValidateCSVTask(ITask):
             raise ValueError(f"Columnas faltantes: {missing}")
         return {"rows": len(df), "columns": list(df.columns)}
 
-    def get_param_schema(self):
-        return self.params_schema

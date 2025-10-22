@@ -1,17 +1,38 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
-from Decorator import task_wrapper
+from typing import Type, Dict, Any
+from strategies.base import ITask
+from strategies.Http_get import HttpGetTask
+from strategies.notify_mock import NotifyMockTask
+from strategies.save_db import SaveDBTask
+from strategies.transform_simply import TransformSimpleTask
+from strategies.validate_csv import ValidateCSVTask
 
-class ITask(ABC):
-    #@abstractmethod
-    def execute(self, params: dict) -> dict:
-        """Ejecuta la tarea y retorna resultado"""
-        pass
+#Factory pattern
+class TaskFactory(ABC):
+    _registry = {}
+
+    def register(self, type:str):
+        task_type = type
+        self._registry[task_type] = self.create()
+        print(f"[TaskFactory] Registrada tarea: {task_type}")
     
-    #@abstractmethod
-    def validate_params(self, params: dict) -> bool:
-        """Valida parámetros antes de ejecutar"""
+    @abstractmethod
+    def create():
         pass
+
+
+    def list(self) -> list[Type[ITask]]:
+        """
+        Devuelve una lista de todas las clases de tareas registradas.
+        (Usado por el endpoint /task-types para el frontend)
+        """
+        return list(self._registry.values())
+
+    def clear(self):
+        """
+        Limpia el registro (útil para pruebas unitarias o reinicios).
+        """
+        self._registry.clear()
 
     # ======== Hooks opcionales (Template Method) ========
 
@@ -37,7 +58,7 @@ class ITask(ABC):
         print(f"[{self.__class__.__name__}] Error durante ejecución: {error}")
 
     # ======== Plantilla de ejecución ========
-    #@task_wrapper
+
     def run(self, context: Dict[str, Any], params: Dict[str, Any]) -> Any:
         """
         Define el ciclo de vida estándar de ejecución de una tarea.
@@ -63,4 +84,24 @@ class ITask(ABC):
         except Exception as e:
             self.on_error(e)
             raise
+
+class http_get(TaskFactory):
+    def create(self):
+        return HttpGetTask()
+    
+class notify_mock(TaskFactory):
+    def create(self):
+        return NotifyMockTask()
+    
+class save_db(TaskFactory):
+    def create(self):
+        return SaveDBTask()
+    
+class transform_simply(TaskFactory):
+    def create(self):
+        return TransformSimpleTask()
+    
+class validate_csv(TaskFactory):
+   def create(self):
+        return ValidateCSVTask() 
 

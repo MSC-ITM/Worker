@@ -37,5 +37,3 @@ class SaveDBTask(ITask):
         conn.close()
         return {"table": params["table"], "rows_inserted": len(df)}
 
-    def get_param_schema(self):
-        return self.params_schema
