@@ -1,6 +1,13 @@
 from strategies.base import ITask
 from typing import Type
 
+"""
+T2 = Taskregistry()
+T2.register(HttpGetTask)
+T2.register(ValidateCSVTask)
+...
+"""
+
 #Factory pattern
 class Taskregistry():
     _registry = {}

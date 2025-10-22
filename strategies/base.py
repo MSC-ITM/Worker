@@ -1,8 +1,22 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
-from Decorator import task_wrapper
+#from Worker.Borrador_Decorator import task_wrapper
 
 class ITask(ABC):
+    """
+    Clase base para todas las tareas del Worker.
+
+    Implementa el patrón Template Method:
+    - Define la estructura de ejecución estándar (`run()`).
+    - Permite personalizar pasos específicos mediante hooks (`before`, `after`, `on_error`).
+    - Obliga a implementar `validate_params()` y `execute()` en subclases.
+
+    Todas las tareas que hereden de esta clase deben:
+    1. Definir el atributo `type` (string) que las identifique.
+    2. Implementar `validate_params()` → valida los parámetros de entrada.
+    3. Implementar `execute()` → realiza la lógica principal de la tarea.
+    4. (Opcional) Sobrescribir `on_error()` si necesitan manejo de errores personalizado.
+    """
     #@abstractmethod
     def execute(self, params: dict) -> dict:
         """Ejecuta la tarea y retorna resultado"""
@@ -16,26 +30,26 @@ class ITask(ABC):
     # ======== Hooks opcionales (Template Method) ========
 
     def before(self, params: Dict[str, Any]):
-        """
-        Hook opcional que se ejecuta antes de `execute()`.
-        Puede ser usado para inicialización, logging o métricas.
-        """
-        pass
+        """Hook opcional que se ejecuta antes de la validación y ejecución."""
+        print(f"[{self.__class__.__name__}] ▶️ Iniciando tarea con params: {params}")
 
     def after(self, result: Any):
-        """
-        Hook opcional que se ejecuta después de `execute()`.
-        Permite registrar resultados, métricas o limpieza de recursos.
-        """
-        pass
+        """Hook opcional que se ejecuta después de la ejecución exitosa."""
+        print(f"[{self.__class__.__name__}] ✅ Finalizó correctamente con resultado: {result}")
 
     def on_error(self, error: Exception):
         """
-        Hook opcional que se ejecuta si ocurre un error durante `execute()`.
-        Permite manejar fallos, reintentos o reportes personalizados.
-        """
-        print(f"[{self.__class__.__name__}] Error durante ejecución: {error}")
+        Hook de manejo de errores.
+        - Se ejecuta automáticamente si ocurre una excepción en `validate_params()` o `execute()`.
+        - Puede ser sobrescrito por cada subclase para devolver un resultado personalizado.
 
+        Por defecto, devuelve un diccionario genérico con el mensaje de error.
+        """
+        print(f"[{self.__class__.__name__}] ❌ Error manejado por ITask: {error}")
+        return {
+            "success": False,
+            "error": str(error)
+        }
     # ======== Plantilla de ejecución ========
     #@task_wrapper
     def run(self, context: Dict[str, Any], params: Dict[str, Any]) -> Any:

@@ -27,5 +27,46 @@ command = TaskCommand(
 
 context = {"run_id": "RUN-001"}
 result = engine.execute_command(command, context)
-print(result)
 
+print("---"*30)
+
+command = TaskCommand(
+    run_id="RUN-TEST1",
+    node_key="valcsv1",
+    type="validate_csv",
+    params={
+        "path": "data/sample.csv",
+        "columns": ["id", "nombre", "edad"]
+    }
+)
+result = engine.execute_command(command)
+print(result)
+print("---"*30)
+
+command = TaskCommand(
+    run_id="RUN-TEST2",
+    node_key="save_db1",
+    type="save_db",
+    params={
+        "path": "data/sample.csv",
+        "table": "usuarios",
+        "mode": "replace"
+    }
+)
+result = engine.execute_command(command)
+print(result)
+print("---"*30)
+command = TaskCommand(
+    run_id="RUN-TEST3",
+    node_key="transform1",
+    type="transform_simple",
+    params={
+        "input_path": "data/sample.csv",
+        "output_path": "data/output.csv",
+        "select_columns": ["id", "nombre", "ciudad"],
+        "rename_map": {"nombre": "NombreCompleto"}
+    }
+)
+result = engine.execute_command(command)
+print(result)
+print("---"*30)

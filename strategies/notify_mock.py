@@ -24,11 +24,26 @@ class NotifyMockTask(ITask):
         if "channel" not in params or "message" not in params:
             raise ValueError("Se requieren 'channel' y 'message'.")
 
+  
     def execute(self, context, params):
-        time.sleep(1)  # simulamos retardo
+        try:
+            time.sleep(1)  # Simula retardo
+            print(f"[NotifyMockTask] Enviando notificación a {params['channel']}: {params['message']}")
+            return {
+                "sent": True,
+                "channel": params["channel"],
+                "message": params["message"],
+                "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+        except Exception as e:
+            raise RuntimeError(f"Fallo al simular notificación: {e}")
+
+    def on_error(self, error):
+        print(f"[{self.__class__.__name__}] ⚠️ Error manejado: {error}")
         return {
-            "sent": True,
-            "channel": params["channel"],
-            "message": params["message"]
+            "sent": False,
+            "channel": None,
+            "message": None,
+            "error": str(error)
         }
 

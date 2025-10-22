@@ -24,5 +24,22 @@ class HttpGetTask(ITask):
             raise ValueError("El parámetro 'url' es obligatorio.")
 
     def execute(self, context, params):
-        response = requests.get(params["url"], headers=params.get("headers"))
-        return {"status_code": response.status_code, "body": response.text[:500]}
+        try:
+            response = requests.get(params["url"], headers=params.get("headers"))
+            response.raise_for_status()
+            return {
+                "success":True,
+                "status_code": response.status_code,
+                "body": response.text[:500]
+            }
+        except requests.exceptions.RequestException as e:
+            raise ConnectionError(f"Error al realizar la solicitud HTTP: {e}")
+
+    def on_error(self, error):
+        print(f"[{self.__class__.__name__}] ⚠️ Error manejado: {error}")
+        return {
+            "status_code": None,
+            "body": None,
+            "error": str(error),
+            "success": False
+        }

@@ -4,45 +4,56 @@ from datetime import datetime
 from Borrador_FactoryM import TaskFactory
 from strategies import base
 from Task_command import TaskCommand
-from Borrador_decorador import timedecorator
+from decorador import TimeDecorator
+from config.decoradores_config import TASK_DECORATOR_MAP
 
 
 class WorkerEngine:
     def __init__(self, registry:TaskFactory):
         self.registry = registry
-    """Motor principal del Worker. Ejecuta comandos encolados."""
+    """
+    Orquestador principal de ejecución de tareas (Worker). Ejecuta comandos encolados
+    Aplica decoradores de forma automática para instrumentar las tareas.
+    """
+    def _apply_decorators(self, task, task_id:str):
+        """Aplica decoradores según el tipo de tarea."""
+        decorated_task = task
 
+        # Obtiene lista de decoradores registrados para este tipo
+        decorators = TASK_DECORATOR_MAP.get(task_id, [])
+
+        for decorator_cls in decorators:
+            decorated_task = decorator_cls(decorated_task)
+
+        return decorated_task
+    
     def execute_command(self, command: TaskCommand, context={}):
-        print(f"[Worker] Ejecutando {command}")
+        print(f"[Worker] ▶️ Ejecutando {command.type} (node={command.node_key}, run={command.run_id})")
+        # 1️⃣ Crear instancia de la tarea (Strategy) desde el registro	
+        task = self.registry.create(command.type)
+        if not task:
+            raise ValueError(f"Tarea no registrada: {command.type}")
+        # 3️⃣ Aplicar decoradores configurados
+        task = self._apply_decorators(task, command.type)
+
+        # 4️⃣ Ejecutar flujo
+        context = {}
 
         try:
-            # 1️⃣ Crear instancia de la tarea (Strategy) desde el registro		
-            #task = self.registry.create(command.type)
-            task = timedecorator(self.registry.create(command.type))
 
             # # 2️⃣ Validar parámetros antes de ejecutar y 3️⃣ Ejecutar la tarea
             result = task.run(context, command.params)
-            print(task.run.__name__)
-            print(task.run.__doc__) 
-            
+            print("")
             # 4️⃣ Registrar éxito y devolver resultado
-            print(f"[Worker] ✅ Tarea '{command.type}' completada exitosamente")
+            print(f"[Worker] ✅ Tarea '{command.type}' completada")
             return {
                 "status": "SUCCESS",
                 "run_id": command.run_id,
                 "node_key": command.node_key,
                 "result": result,
-                "finished_at": datetime.utcnow().isoformat()
             }
 
         except Exception as e:
-            # 5️⃣ Manejo de error y logging
+            # si el decorador no lo manejó, aún tienes fallback
             print(f"[Worker] ❌ Error ejecutando {command}: {e}")
-            traceback.print_exc()
-            return {
-                "status": "FAILED",
-                "run_id": command.run_id,
-                "node_key": command.node_key,
-                "error": str(e),
-                "finished_at": datetime.utcnow().isoformat()
-            }
+            return {"status": "FAILED", "error": str(e)}

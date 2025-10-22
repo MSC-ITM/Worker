@@ -1,5 +1,6 @@
 # app/tasks/validate_csv.py
 import pandas as pd
+import os 
 from typing import Any, Dict, List
 from strategies.base import ITask
 
@@ -28,9 +29,42 @@ class ValidateCSVTask(ITask):
             raise ValueError("Faltan parámetros: 'path' y 'columns'.")
 
     def execute(self, context, params):
-        df = pd.read_csv(params["path"])
-        missing = [c for c in params["columns"] if c not in df.columns]
+        path = params["path"]
+
+        # 1️⃣ Verifica existencia
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Archivo no encontrado: {path}")
+
+        # 2️⃣ Lee CSV con pandas
+        df = pd.read_csv(path)
+
+        # 3️⃣ Verifica vacío
+        if df.empty:
+            raise ValueError("El archivo CSV está vacío.")
+
+        # 4️⃣ Verifica columnas esperadas
+        expected_cols = params["columns"]
+        missing = [c for c in expected_cols if c not in df.columns]
         if missing:
             raise ValueError(f"Columnas faltantes: {missing}")
-        return {"rows": len(df), "columns": list(df.columns)}
 
+        # ✅ Si todo va bien
+        return {
+            "valid": True,
+            "rows": len(df),
+            "columns": list(df.columns)
+        }
+
+    def on_error(self, error):
+        """Manejo personalizado de errores para CSV."""
+        print(f"[{self.__class__.__name__}] ⚠️ Error manejado: {error}")
+        # Devuelve un resultado estructurado en lugar de romper el flujo
+        result = {
+        "valid": False,
+        "error": str(error),
+        "rows": 0,
+        "columns": []
+        }
+        # Guarda resultado de error en el contexto (opcional)
+        self.last_result = result
+        return result
