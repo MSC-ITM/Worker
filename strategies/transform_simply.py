@@ -1,7 +1,8 @@
 # app/tasks/transform_simple.py
 import pandas as pd
+import os
 from typing import Any, Dict, List
-from strategies.base import ITask
+from Worker.strategies.base import ITask
 
 
 class TransformSimpleTask(ITask):
@@ -34,13 +35,38 @@ class TransformSimpleTask(ITask):
             raise ValueError("Se requieren 'input_path' y 'output_path'.")
 
     def execute(self, context, params):
-        df = pd.read_csv(params["input_path"])
+        path_in = params["input_path"]
+        path_out = params["output_path"]
+
+        if not os.path.exists(path_in):
+            raise FileNotFoundError(f"Archivo de entrada no encontrado: {path_in}")
+
+        df = pd.read_csv(path_in)
+
+        if df.empty:
+            raise ValueError("El archivo CSV de entrada está vacío.")
+
         if "select_columns" in params:
+            missing = [c for c in params["select_columns"] if c not in df.columns]
+            if missing:
+                raise ValueError(f"Columnas faltantes en input: {missing}")
             df = df[params["select_columns"]]
+
         if "rename_map" in params:
             df = df.rename(columns=params["rename_map"])
-        df.to_csv(params["output_path"], index=False)
-        return {"output_path": params["output_path"], "rows": len(df)}
 
-    def get_param_schema(self):
-        return self.params_schema
+        df.to_csv(path_out, index=False)
+        return {"output_path": path_out, "rows": len(df), "columns": list(df.columns)}
+
+    def on_error(self, error):
+        print(f"[{self.__class__.__name__}] ⚠️ Error manejado: {error}")
+        return {
+            "output_path": None,
+            "rows": 0,
+            "columns": [],
+            "error": str(error),
+            "success": False
+        }
+
+
+
