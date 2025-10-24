@@ -1,7 +1,7 @@
 # app/tasks/http_get.py
 import requests
 from typing import Any, Dict, List
-from strategies.base import ITask
+from Worker.strategies.base import ITask
 
 
 class HttpGetTask(ITask):

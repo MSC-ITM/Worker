@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict
-#from Worker.Borrador_Decorator import task_wrapper
 
 class ITask(ABC):
     """

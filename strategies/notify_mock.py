@@ -1,7 +1,7 @@
 # app/tasks/notify_mock.py
 import time
 from typing import Any, Dict, List
-from strategies.base import ITask
+from Worker.strategies.base import ITask
 
 
 class NotifyMockTask(ITask):

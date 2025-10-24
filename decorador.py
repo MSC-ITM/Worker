@@ -1,4 +1,4 @@
-from strategies.base import ITask
+from Worker.strategies.base import ITask
 from typing import Dict, Any
 import json
 import time
@@ -37,13 +37,7 @@ class TimeDecorator(TaskDecorator):
         except Exception as e:
             elapsed = round(time.time() - start, 3)
             print(f"[{task_name}] ❌ Error tras {elapsed}s: {e}")
-
-            # 🚫 En lugar de relanzar, delega el manejo al on_error() de la tarea
-            if hasattr(self._wrapped_Task, "on_error"):
-                return self._wrapped_Task.on_error(e)
-
-            # fallback genérico
-            return {"success": False, "error": str(e), "elapsed": elapsed}
+            raise
 
 class LoggingDecorator(TaskDecorator):
     """

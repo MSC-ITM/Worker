@@ -1,5 +1,5 @@
-from strategies.base import ITask
-from typing import Type
+from Worker.strategies.base import ITask
+from typing import Type, Dict
 
 """
 T2 = Taskregistry()
@@ -10,7 +10,13 @@ T2.register(ValidateCSVTask)
 
 #Factory pattern
 class Taskregistry():
-    _registry = {}
+    """
+    Catálogo de estrategias de tareas disponibles en el sistema.
+    Permite registrar y crear instancias de tareas concretas.
+    """
+
+    def __init__(self):
+        self._registry: Dict[str, Type[ITask]] = {}
     
     def register(self, task_cls: Type[ITask]):
         """
@@ -44,7 +50,8 @@ class Taskregistry():
 
     def clear(self):
         """
-        Limpia el registro (útil para pruebas unitarias o reinicios).
+        Limpia el registro actual (útil en tests).
         """
         self._registry.clear()
+        print("[TaskRegistry] 🧹 Registro limpiado.")
 

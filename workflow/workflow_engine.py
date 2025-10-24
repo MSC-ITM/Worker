@@ -1,19 +1,24 @@
 # worker/workflow/workflow_engine.py
 from typing import Dict, Any
-from worker_engine import WorkerEngine
-from workflow.workflow_models import WorkflowDefinition, WorkflowResult
+from Worker.worker_engine import WorkerEngine
+from Worker.workflow.workflow_models import WorkflowDefinition, WorkflowResult
+from Worker.workflow.workflow_persistence import WorkflowRepository
 import json
+from datetime import datetime
 
 class WorkflowEngine:
     """
     Orquestador de flujos de trabajo.
     Coordina la ejecución secuencial (o futura paralela) de tareas con dependencias.
     """
-    def __init__(self, worker: WorkerEngine):
+    def __init__(self, worker: WorkerEngine, repo: WorkflowRepository):
         self.worker = worker
+        self.repo = repo    
 
     def run(self, workflow: WorkflowDefinition) -> WorkflowResult:
         print(f"[WorkflowEngine] ▶️ Ejecutando workflow: {workflow.name}")
+        start_time = datetime.now()
+
         context: Dict[str, Any] = {}
         results: Dict[str, Any] = {}
         node_status: Dict[str, str] = {}  # SUCCESS | FAILED | SKIPPED
@@ -21,6 +26,18 @@ class WorkflowEngine:
         # 🔹 Determinar orden de ejecución según dependencias
         pending = {node.id: node for node in workflow.nodes}
         executed = set()
+
+        workflow_id = None  # se asignará después de crear el registro base
+
+        # Registrar inicio de workflow
+        with self.repo.engine.connect() as conn:
+            workflow_id = self.repo.save_workflow_run(
+                workflow_name=workflow.name,
+                status="RUNNING",
+                results={},
+                started_at=start_time,
+                finished_at=start_time
+            )
 
         while pending:
             progress = False
@@ -43,6 +60,7 @@ class WorkflowEngine:
 
                 # Ejecutar si todas las dependencias están completas
                 if all(dep in executed for dep in node.depends_on):
+                    node_start = datetime.now()
                     print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")
                     from Task_command import TaskCommand  # importar aquí para evitar ciclos
                     command = TaskCommand(
@@ -55,20 +73,33 @@ class WorkflowEngine:
                     # Ejecutar tarea con Worker
                     task_result = self.worker.execute_command(command)
                     result_data = task_result.get("result")
+                    node_end = datetime.now()
 
                      # Determinar estado de la tarea
                     if task_result.get("status") == "SUCCESS" and not (
                         isinstance(result_data, dict) and result_data.get("success") is False):
-                        node_status[node_id] = "SUCCESS"
+                        status = "SUCCESS"
                         print(f"[WorkflowEngine] ✅ Nodo '{node_id}' completado correctamente.")
                     else:
-                        node_status[node_id] = "FAILED"
+                        status = "FAILED"
                         print(f"[WorkflowEngine] ❌ Nodo '{node_id}' falló durante la ejecución.")
 
-
                     # Guardar resultados
+                    node_status[node.id] = status
                     results[node.id] = task_result.get("result")
                     context[node.id] = task_result.get("result")
+
+                    # Persistir nodo
+                    self.repo.save_node_run(
+                        workflow_id=workflow_id,
+                        node_id=node_id,
+                        node_type=node.type,
+                        status=status,
+                        started_at=node_start,
+                        finished_at=node_end,
+                        result=result_data or {}
+                    )
+
                     executed.add(node.id)
                     del pending[node_id]
                     progress = True
@@ -77,12 +108,21 @@ class WorkflowEngine:
                 raise RuntimeError("❌ No se puede continuar: dependencias circulares o tareas bloqueadas.")
             
         # Determinar estado global del workflow
-        if all(status == "SUCCESS" for status in node_status.values()):
-            workflow_status = "SUCCESS"
-        elif any(status == "SUCCESS" for status in node_status.values()):
-            workflow_status = "PARTIAL_SUCCESS"
+        end_time = datetime.now()
+        if all(s == "SUCCESS" for s in node_status.values()):
+            wf_status = "SUCCESS"
+        elif any(s == "SUCCESS" for s in node_status.values()):
+            wf_status = "PARTIAL_SUCCESS"
         else:
-            workflow_status = "FAILED"
+            wf_status = "FAILED"
 
-        print(f"[WorkflowEngine] 🏁 Workflow completado: {workflow.name} con estado {workflow_status}")
-        return WorkflowResult(workflow_name=workflow.name, status=workflow_status, results=results)
+        # Al final del método run(), en lugar de save_workflow_run():
+        self.repo.update_workflow_run(
+            workflow_id=workflow_id,
+            status=wf_status,
+            results=results,
+            finished_at=end_time
+        )
+
+        print(f"[WorkflowEngine] 🏁 Workflow completado: {workflow.name} con estado {wf_status}")
+        return WorkflowResult(workflow_name=workflow.name, status=wf_status, results=results)

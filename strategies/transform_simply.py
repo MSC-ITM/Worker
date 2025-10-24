@@ -2,7 +2,7 @@
 import pandas as pd
 import os
 from typing import Any, Dict, List
-from strategies.base import ITask
+from Worker.strategies.base import ITask
 
 
 class TransformSimpleTask(ITask):

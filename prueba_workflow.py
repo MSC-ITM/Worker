@@ -1,5 +1,6 @@
 from workflow.workflow_engine import WorkflowEngine
 from workflow.workflow_models import WorkflowDefinition
+from Worker.workflow.workflow_persistence import WorkflowRepository
 from worker_engine import WorkerEngine
 import json
 
@@ -51,8 +52,14 @@ workflow_data = {
     ]
 }
 
+# workflow = WorkflowDefinition.from_dict(workflow_data)
+# engine = WorkflowEngine(worker=WorkerEngine(T2))
+# result = engine.run(workflow)
+
+"""con persistencia"""
+repo = WorkflowRepository()
+engine = WorkflowEngine(worker=WorkerEngine(T2), repo=repo)
 workflow = WorkflowDefinition.from_dict(workflow_data)
-engine = WorkflowEngine(worker=WorkerEngine(T2))
 result = engine.run(workflow)
 
 print(json.dumps(result.__dict__, indent=2, ensure_ascii=False))

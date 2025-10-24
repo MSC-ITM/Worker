@@ -1,15 +1,16 @@
 # worker/worker_engine.py
 import traceback
 from datetime import datetime
-from Borrador_FactoryM import TaskFactory
-from strategies import base
-from Task_command import TaskCommand
-from decorador import TimeDecorator
-from config.decoradores_config import TASK_DECORATOR_MAP
+from Worker.factory import Taskregistry
+#from Worker.Borrador_FactoryM import TaskFactory
+from Worker.strategies import base
+from Worker.Task_command import TaskCommand
+from Worker.decorador import TimeDecorator
+from Worker.config.decoradores_config import TASK_DECORATOR_MAP
 
 
 class WorkerEngine:
-    def __init__(self, registry:TaskFactory):
+    def __init__(self, registry:Taskregistry):
         self.registry = registry
     """
     Orquestador principal de ejecución de tareas (Worker). Ejecuta comandos encolados
@@ -27,8 +28,12 @@ class WorkerEngine:
 
         return decorated_task
     
-    def execute_command(self, command: TaskCommand, context={}):
+    def execute_command(self, command: TaskCommand, context=None):
         print(f"[Worker] ▶️ Ejecutando {command.type} (node={command.node_key}, run={command.run_id})")
+        # Inicializar context si es None
+        if context is None:
+            context = {}    
+
         # 1️⃣ Crear instancia de la tarea (Strategy) desde el registro	
         task = self.registry.create(command.type)
         if not task:
