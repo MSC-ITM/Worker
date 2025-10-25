@@ -1,3 +1,5 @@
+# 🚀 Worker Engine - Sistema de Orquestación de Workflows
+
 Sistema modular y extensible para la ejecución de workflows con tareas configurables, diseñado con patrones de diseño robustos (Strategy, Command, Decorator, Factory).
 
 ## 📋 Tabla de Contenidos

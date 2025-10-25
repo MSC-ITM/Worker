@@ -1,10 +1,20 @@
 # worker/workflow/workflow_persistence.py
 from datetime import datetime
 from typing import Optional, Dict, Any
-from sqlmodel import Field, SQLModel, create_engine, Session, select
+from sqlmodel import Field, SQLModel, create_engine, Session, select, Column
 from sqlalchemy import inspect
 import json
 import os
+
+class WorkflowDefinition(SQLModel, table=True):
+    __tablename__ = "workflow_definition"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(nullable=False, max_length=255)
+    definition: Dict[str, Any] = Field(sa_column=Column(json), nullable=False)
+    status: str = Field(default="pendiente", nullable=False, max_length=50)
+    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
 
 # --- MODELOS DE TABLA ---
 
@@ -105,3 +115,36 @@ class WorkflowRepository:
                 session.add(run)
                 session.commit()
 
+    def create_workflow(self, name: str, definition: dict) -> WorkflowDefinition:
+        with Session(self.engine) as session:
+            wf = WorkflowDefinition(name=name, definition=definition, status="pendiente")
+            session.add(wf)
+            session.commit()
+            session.refresh(wf)
+            return wf
+
+    def get_workflow(self, workflow_id: int) -> Optional[WorkflowDefinition]:
+        with Session(self.engine) as session:
+            statement = select(WorkflowDefinition).where(WorkflowDefinition.id == workflow_id)
+            return session.exec(statement).first()
+
+    def list_workflows(self) -> list[WorkflowDefinition]:
+        with Session(self.engine) as session:
+            return list(session.exec(select(WorkflowDefinition)))
+
+    def update_workflow_status(self, workflow_id: int, status: str):
+        with Session(self.engine) as session:
+            wf = session.get(WorkflowDefinition, workflow_id)
+            if wf:
+                wf.status = status
+                wf.updated_at = datetime.utcnow()
+                session.add(wf)
+                session.commit()
+                session.refresh(wf)
+                return wf
+            return None
+
+    def list_pending(self):
+        with Session(self.engine) as session:
+            stmt = select(WorkflowDefinition).where(WorkflowDefinition.status == "pendiente")
+            return list(session.exec(stmt))
