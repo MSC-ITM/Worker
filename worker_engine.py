@@ -1,11 +1,8 @@
 # worker/worker_engine.py
 import traceback
 from datetime import datetime
-from Worker.factory import Taskregistry
-#from Worker.Borrador_FactoryM import TaskFactory
-from Worker.strategies import base
+from Worker.registry import Taskregistry
 from Worker.Task_command import TaskCommand
-from Worker.decorador import TimeDecorator
 from Worker.config.decoradores_config import TASK_DECORATOR_MAP
 
 
@@ -34,23 +31,20 @@ class WorkerEngine:
         if context is None:
             context = {}    
 
-        # 1️⃣ Crear instancia de la tarea (Strategy) desde el registro	
-        task = self.registry.create(command.type)
-        if not task:
-            raise ValueError(f"Tarea no registrada: {command.type}")
-        # 3️⃣ Aplicar decoradores configurados
+        # 1️⃣ Crear instancia de la tarea usando el registro (Factory Method indirecto)
+        try:
+            task = self.registry.create(command.type)
+        except ValueError as e:
+            print(f"[Worker] ❌ Error: tipo de tarea no registrada '{command.type}'")
+            return {"status": "FAILED", "error": str(e)}
+
+        # 2️⃣ Aplicar decoradores
         task = self._apply_decorators(task, command.type)
 
-        # 4️⃣ Ejecutar flujo
-        context = {}
-
+        # 3️⃣ Ejecutar con manejo de errores controlado
         try:
-
-            # # 2️⃣ Validar parámetros antes de ejecutar y 3️⃣ Ejecutar la tarea
             result = task.run(context, command.params)
-            print("")
-            # 4️⃣ Registrar éxito y devolver resultado
-            print(f"[Worker] ✅ Tarea '{command.type}' completada")
+            print(f"[Worker] ✅ Tarea '{command.type}' completada correctamente.")
             return {
                 "status": "SUCCESS",
                 "run_id": command.run_id,
@@ -59,6 +53,11 @@ class WorkerEngine:
             }
 
         except Exception as e:
-            # si el decorador no lo manejó, aún tienes fallback
-            print(f"[Worker] ❌ Error ejecutando {command}: {e}")
-            return {"status": "FAILED", "error": str(e)}
+            # Captura genérica (en caso de que el decorador no haya manejado)
+            print(f"[Worker] ❌ Error ejecutando {command.type}: {e}")
+            return {
+                "status": "FAILED",
+                "run_id": command.run_id,
+                "node_key": command.node_key,
+                "error": str(e),
+            }
