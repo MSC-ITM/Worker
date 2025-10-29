@@ -29,7 +29,7 @@ Primera versión estable del Worker Engine con todas las funcionalidades core.
 #### Core Features
 - **WorkflowEngine**: Orquestador de workflows con resolución de dependencias
 - **WorkerEngine**: Ejecutor de comandos individuales con sistema de decoradores
-- **TaskRegistry**: Registro centralizado de tareas (Factory Pattern)
+- **Taskregistry**: Registro centralizado de tareas (Factory Pattern)
 - **ITask**: Interfaz base para todas las tareas (Strategy Pattern)
 - **WorkflowRepository**: Sistema de persistencia con SQLite y SQLModel
 

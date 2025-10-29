@@ -3,6 +3,7 @@ from typing import Dict, Any
 from Worker.worker_engine import WorkerEngine
 from Worker.workflow.workflow_models import WorkflowDefinition, WorkflowResult
 from Worker.workflow.workflow_persistence import WorkflowRepository
+from Worker.Task_command import TaskCommand 
 import json
 from datetime import datetime
 
@@ -61,8 +62,7 @@ class WorkflowEngine:
                 # Ejecutar si todas las dependencias están completas
                 if all(dep in executed for dep in node.depends_on):
                     node_start = datetime.now()
-                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")
-                    from Task_command import TaskCommand  # importar aquí para evitar ciclos
+                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")                    
                     command = TaskCommand(
                         run_id=f"{workflow.name}_{node.id}",
                         node_key=node.id,
@@ -116,7 +116,7 @@ class WorkflowEngine:
         else:
             wf_status = "FAILED"
 
-        # Al final del método run(), en lugar de save_workflow_run():
+        # Actualiza el status del workflow
         self.repo.update_workflow_run(
             workflow_id=workflow_id,
             status=wf_status,

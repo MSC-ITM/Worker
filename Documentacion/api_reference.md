@@ -8,7 +8,7 @@ Documentación completa de la API pública del Worker Engine.
 
 - [WorkflowEngine](#workflowengine)
 - [WorkerEngine](#workerengine)
-- [TaskRegistry](#taskregistry)
+- [Taskregistry](#Taskregistry)
 - [ITask](#itask)
 - [WorkflowRepository](#workflowrepository)
 - [Models](#models)
@@ -36,7 +36,7 @@ WorkflowEngine(worker: WorkerEngine, repo: WorkflowRepository)
 from Worker.workflow.workflow_engine import WorkflowEngine
 from Worker.worker_engine import WorkerEngine
 from Worker.workflow.workflow_persistence import WorkflowRepository
-from Worker.factory import Taskregistry
+from Worker.registry import Taskregistry
 
 registry = Taskregistry()
 # ... registrar tareas
@@ -104,7 +104,7 @@ WorkerEngine(registry: Taskregistry)
 
 ```python
 from Worker.worker_engine import WorkerEngine
-from Worker.factory import Taskregistry
+from Worker.registry import Taskregistry
 from Worker.strategies.Http_get import HttpGetTask
 
 registry = Taskregistry()
@@ -157,7 +157,7 @@ else:
 
 ---
 
-## TaskRegistry
+## Taskregistry
 
 Catálogo de tareas disponibles (patrón Factory).
 
@@ -170,7 +170,7 @@ Taskregistry()
 **Ejemplo:**
 
 ```python
-from Worker.factory import Taskregistry
+from Worker.registry import Taskregistry
 
 registry = Taskregistry()
 ```

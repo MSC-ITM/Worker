@@ -46,7 +46,7 @@ Sistema modular y extensible para la ejecución de workflows con tareas configur
                      │
                      ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                    TaskRegistry (Factory)                    │
+│                    Taskregistry (Factory)                    │
 │  (Catálogo de tareas disponibles)                           │
 └────────────────────┬────────────────────────────────────────┘
                      │
@@ -72,7 +72,7 @@ sequenceDiagram
     participant User
     participant WorkflowEngine
     participant WorkerEngine
-    participant TaskRegistry
+    participant Taskregistry
     participant Task
     participant Repository
 
@@ -81,8 +81,8 @@ sequenceDiagram
     
     loop Para cada nodo
         WorkflowEngine->>WorkerEngine: execute_command()
-        WorkerEngine->>TaskRegistry: create(task_type)
-        TaskRegistry-->>WorkerEngine: task instance
+        WorkerEngine->>Taskregistry: create(task_type)
+        Taskregistry-->>WorkerEngine: task instance
         WorkerEngine->>Task: run(context, params)
         Task-->>WorkerEngine: result
         WorkerEngine-->>WorkflowEngine: result
@@ -177,7 +177,7 @@ from Worker.workflow.workflow_engine import WorkflowEngine
 from Worker.workflow.workflow_models import WorkflowDefinition
 from Worker.workflow.workflow_persistence import WorkflowRepository
 from Worker.worker_engine import WorkerEngine
-from Worker.factory import Taskregistry
+from Worker.registry import Taskregistry
 from Worker.strategies.validate_csv import ValidateCSVTask
 from Worker.strategies.transform_simply import TransformSimpleTask
 from Worker.strategies.save_db import SaveDBTask
@@ -308,7 +308,7 @@ class WorkerEngine:
         """Ejecuta un comando individual"""
 ```
 
-### 3. TaskRegistry (Factory)
+### 3. Taskregistry (Factory)
 
 Catálogo centralizado de tareas disponibles.
 

@@ -19,7 +19,7 @@ Documentación técnica detallada del sistema de orquestación de workflows.
 | Patrón | Implementación | Propósito |
 |--------|---------------|-----------|
 | **Strategy** | `ITask` + tareas concretas | Intercambiar algoritmos de procesamiento |
-| **Factory** | `TaskRegistry` | Crear instancias de tareas dinámicamente |
+| **Factory** | `Taskregistry` | Crear instancias de tareas dinámicamente |
 | **Command** | `TaskCommand` | Encapsular requests como objetos |
 | **Decorator** | `TimeDecorator`, `LoggingDecorator` | Añadir funcionalidad sin modificar código |
 | **Template Method** | `ITask.run()` | Definir esqueleto de algoritmo |
@@ -440,7 +440,7 @@ with Session(repo.engine) as session:
 ```python
 # conftest.py (opcional)
 import pytest
-from Worker.factory import Taskregistry
+from Worker.registry import Taskregistry
 from Worker.worker_engine import WorkerEngine
 from Worker.workflow.workflow_persistence import WorkflowRepository
 
