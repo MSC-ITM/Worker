@@ -90,6 +90,7 @@ def main():
     except KeyboardInterrupt:
         logger.info("\n⏹️ Interrupción recibida")
     finally:
+        #if not service._is_stopped:  # ✅ Verificar antes de llamar
         service.stop()
         logger.info("👋 Worker Service terminado")
         

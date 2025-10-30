@@ -11,11 +11,7 @@ from Worker.strategies.validate_csv import ValidateCSVTask
 
 #Factory pattern
 class TaskFactory(ABC):
-    def anOperation(self) -> str:
-        """Método genérico que usa el producto sin conocer su tipo concreto."""
-        task = self.create()
-        return f"[TaskFactory] Ejecutó {task.__class__.__name__} con resultado: {result}"
-    
+   
     @abstractmethod
     def create():
         pass
