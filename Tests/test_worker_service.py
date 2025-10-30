@@ -545,6 +545,7 @@ def test_worker_service_processes_multiple_workflows(worker_service, populated_d
             successful += 1  # ← Solo contar si tuvo éxito
     
     # Validar estadísticas
+    print(f"Estos son los procesados :{worker_service.stats["total_processed"]}")
     assert worker_service.stats["total_processed"] == 3
 
 

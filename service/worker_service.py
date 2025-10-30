@@ -34,6 +34,7 @@ class WorkerService:
         shared_db_path: str = "database.db",  # ← Misma BD que usa la API
         poll_interval: float = 10.0,
         worker_db_path: str = "data/worker_workflows.db"  # ← BD propia del worker para logs
+        
     ):
         """
         Args:
@@ -45,6 +46,7 @@ class WorkerService:
         self.poll_interval = poll_interval
         self._stop_flag = False
         self._polling_thread: Optional[threading.Thread] = None
+        self._is_stopped = False  # ✅ AGREGAR: Flag para evitar múltiples stops
 
         # Importar el modelo de la API
         from sqlmodel import create_engine, SQLModel
@@ -190,18 +192,11 @@ class WorkerService:
                 session.commit()
                 session.refresh(record)
                 
-                #agregar y borrar despues
-                logger.info(f"[WorkerService] ✅ Estado actualizado: {workflow_id} → {status}")
-                logger.debug(f"[WorkerService] 📊 Estado en BD después de commit: {record.status}")
-
                 logger.debug(f"[WorkerService] 💾 Estado de {workflow_id} actualizado a '{status}'")
                 return True
                 
         except Exception as e:
             logger.error(f"[WorkerService] ❌ Error actualizando BD: {e}")
-            #agregar y borrar despues
-            import traceback
-            logger.error(f"[WorkerService] 📜 Traceback:\n{traceback.format_exc()}")
             return False
 
     def _convert_api_workflow_to_definition(self, api_workflow: Dict[str, Any]) -> WorkflowDefinition:
@@ -301,18 +296,9 @@ class WorkerService:
             logger.info(f"[WorkerService] ▶️ Ejecutando workflow: {workflow_name}")
             result = self.workflow_engine.run(workflow_def)
 
-            # ✅ AGREGAR: Log del resultado, borrar despues
-            # ✅ AGREGAR: Logging detallado del resultado
-            logger.info(f"[WorkerService] 🎯 Workflow ejecutado:")
-            logger.info(f"   - Status: {result.status}")
-            logger.info(f"   - Results keys: {list(result.results.keys())}")
-            logger.info(f"   - Results: {result.results}")
-
             # 4. Mapear resultado al formato de la API
             api_status = self._map_worker_status_to_api(result.status)
 
-            # ✅ AGREGAR DEBUG aquí, borrar despues
-            logger.info(f"[WorkerService] 🔍 Worker status: {result.status} → API status: {api_status}")
             # 5. Actualizar estado en BD compartida
 
             success = self._update_workflow_status_in_db(
@@ -323,7 +309,7 @@ class WorkerService:
             if not success:
                 logger.error(f"[WorkerService] ❌ Error actualizando estado de {workflow_name}")
                 self.stats["failed"] += 1
-                self.stats["total_processed"] += 1  
+                self.stats["total_processed"] += 1
                 return False
             
             self.stats["total_processed"] += 1  
@@ -333,7 +319,7 @@ class WorkerService:
                 return True
             else:
                 logger.warning(f"[WorkerService] ⚠️ Workflow {workflow_name} falló: {api_status}")
-                self.stats["failed"] += 1
+                self.stats["failed"] += 1 
                 return False  
 
 
@@ -349,6 +335,7 @@ class WorkerService:
                 logger.error(f"[WorkerService] ⚠️ No se pudo actualizar estado a 'fallido': {update_error}")
 
             self.stats["failed"] += 1
+            print(f"Aqui suma el excute: {self.stats["total_processed"]}")  
             self.stats["total_processed"] += 1
             return False
 
@@ -359,8 +346,11 @@ class WorkerService:
         logger.info(f"[WorkerService] 🔄 Iniciando loop de polling...")
         self.stats["started_at"] = datetime.now(UTC).isoformat()
 
+        cycle_count = 0
+
         while not self._stop_flag:
             try:
+                cycle_count += 1
                 # Consultar workflows pendientes de la BD
                 logger.debug("[WorkerService] 🔍 Consultando workflows pendientes en BD...")
                 pending_workflows = self._get_pending_workflows_from_db()
@@ -372,8 +362,9 @@ class WorkerService:
 
                     # Procesar cada workflow
                     for workflow in pending_workflows:
-                        if self._execute_workflow(workflow):
-                            self.stats["total_processed"] += 1
+                        self._execute_workflow(workflow)
+                
+                logger.debug(f"[WorkerService] 😴 Durmiendo {self.poll_interval}s hasta próximo ciclo...")
 
             except Exception as e:
                 logger.error(f"[WorkerService] ⚠️ Error en ciclo de polling: {e}", exc_info=True)
@@ -409,12 +400,23 @@ class WorkerService:
             self._poll_loop()
         except KeyboardInterrupt:
             logger.info("[WorkerService] ⏹️ Interrupción por teclado (Ctrl+C)")
-            self.stop()
+            self._stop_flag = True
 
     def stop(self):
         """
         Detiene el servicio de polling.
         """
+        if self._is_stopped:
+            # ✅ Mostrar desde dónde se llamó
+            import traceback
+            logger.warning("[WorkerService] ⚠️ stop() llamado múltiples veces desde:")
+            logger.warning("".join(traceback.format_stack()))
+            return
+        if self._is_stopped:
+            logger.debug("[WorkerService] ⚠️ El servicio ya fue detenido, ignorando llamada duplicada")
+            return
+        
+        self._is_stopped = True
         logger.info("[WorkerService] ⏸️ Deteniendo servicio...")
         self._stop_flag = True
 
