@@ -179,7 +179,6 @@ class WorkerService:
                 
                 # Actualizar estado
                 record.status = status
-                record.updated_at = datetime.now(UTC).replace(microsecond=0).isoformat()
                 
                 # Si hay resultados, agregarlos a la definición
                 if results:
