@@ -1,9 +1,9 @@
 # worker/worker_engine.py
 import traceback
 from datetime import datetime
-from Worker.registry import Taskregistry
-from Worker.Task_command import TaskCommand
-from Worker.config.decoradores_config import TASK_DECORATOR_MAP
+from registry import Taskregistry
+from Task_command import TaskCommand
+from config.decoradores_config import TASK_DECORATOR_MAP
 
 
 class WorkerEngine:

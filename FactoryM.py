@@ -2,12 +2,12 @@ import sys, os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from abc import ABC, abstractmethod
 from typing import Type, Dict, Any
-from Worker.strategies.base import ITask
-from Worker.strategies.Http_get import HttpGetTask
-from Worker.strategies.notify_mock import NotifyMockTask
-from Worker.strategies.save_db import SaveDBTask
-from Worker.strategies.transform_simply import TransformSimpleTask
-from Worker.strategies.validate_csv import ValidateCSVTask
+from strategies.base import ITask
+from strategies.Http_get import HttpGetTask
+from strategies.notify_mock import NotifyMockTask
+from strategies.save_db import SaveDBTask
+from strategies.transform_simply import TransformSimpleTask
+from strategies.validate_csv import ValidateCSVTask
 
 #Factory pattern
 class TaskFactory(ABC):

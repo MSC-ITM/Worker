@@ -2,7 +2,7 @@
 
 import requests
 from typing import Any, Dict, List
-from Worker.strategies.base import ITask
+from strategies.base import ITask
 
 
 class HttpGetTask(ITask):

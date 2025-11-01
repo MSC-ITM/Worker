@@ -1,5 +1,5 @@
-from Worker.strategies.base import ITask
-from Worker.FactoryM import TaskFactoryDirector
+from strategies.base import ITask
+from FactoryM import TaskFactoryDirector
 from typing import Type, Dict
 
 

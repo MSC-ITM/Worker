@@ -4,7 +4,7 @@ import sqlite3
 import pandas as pd
 import os
 from typing import Any, Dict, List
-from Worker.strategies.base import ITask
+from strategies.base import ITask
 
 
 class SaveDBTask(ITask):

@@ -11,7 +11,7 @@ import logging
 # Agregar el directorio raíz al path para imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from Worker.service.worker_service import WorkerService
+from service.worker_service import WorkerService
 
 # Configurar logging
 logging.basicConfig(
@@ -42,8 +42,8 @@ def parse_args():
     parser.add_argument(
         '--poll-interval',
         type=float,
-        default=float(os.getenv('POLL_INTERVAL', '10.0')),
-        help='Intervalo de polling en segundos (default: 10.0)'
+        default=float(os.getenv('POLL_INTERVAL', '3.0')),
+        help='Intervalo de polling en segundos (default: 3.0)'
     )
     
     return parser.parse_args()

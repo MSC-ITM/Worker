@@ -1,9 +1,16 @@
 # worker/workflow/workflow_engine.py
+import sys
+
+# Fix Windows console encoding for emojis - set before any output
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from typing import Dict, Any
-from Worker.worker_engine import WorkerEngine
-from Worker.workflow.workflow_models import WorkflowDefinition, WorkflowResult
-from Worker.workflow.workflow_persistence import WorkflowRepository
-from Worker.Task_command import TaskCommand 
+from worker_engine import WorkerEngine
+from workflow.workflow_models import WorkflowDefinition, WorkflowResult
+from workflow.workflow_persistence import WorkflowRepository
+from Task_command import TaskCommand 
 import json
 from datetime import datetime
 
@@ -31,9 +38,12 @@ class WorkflowEngine:
         workflow_id = None  # se asignará después de crear el registro base
 
         # Registrar inicio de workflow
+        # Use workflow.id if available (from API), otherwise use workflow.name
+        workflow_identifier = workflow.id if workflow.id else workflow.name
+
         with self.repo.engine.connect() as conn:
             workflow_id = self.repo.save_workflow_run(
-                workflow_name=workflow.name,
+                workflow_name=workflow_identifier,
                 status="RUNNING",
                 results={},
                 started_at=start_time,
@@ -59,7 +69,16 @@ class WorkflowEngine:
                 # Ejecutar si todas las dependencias están completas
                 if all(dep in executed for dep in node.depends_on):
                     node_start = datetime.now()
-                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")                   
+
+                    # 1. Crear noderun en estado RUNNING (para progreso gradual)
+                    node_run_id = self.repo.create_node_run_running(
+                        workflow_id=workflow_id,
+                        node_id=node_id,
+                        node_type=node.type,
+                        started_at=node_start
+                    )
+
+                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")
                     command = TaskCommand(
                         run_id=f"{workflow.name}_{node.id}",
                         node_key=node.id,
@@ -67,12 +86,12 @@ class WorkflowEngine:
                         params=node.params
                     )
 
-                    # Ejecutar tarea con Worker
-                    task_result = self.worker.execute_command(command)
+                    # 2. Ejecutar tarea con Worker (pasar contexto con resultados de nodos previos)
+                    task_result = self.worker.execute_command(command, context=context)
                     result_data = task_result.get("result")
                     node_end = datetime.now()
 
-                     # Determinar estado de la tarea
+                    # 3. Determinar estado de la tarea
                     if task_result.get("status") == "SUCCESS" and not (
                         isinstance(result_data, dict) and result_data.get("success") is False):
                         status = "SUCCESS"
@@ -86,13 +105,10 @@ class WorkflowEngine:
                     results[node.id] = task_result.get("result")
                     context[node.id] = task_result.get("result")
 
-                    # Persistir nodo
-                    self.repo.save_node_run(
-                        workflow_id=workflow_id,
-                        node_id=node_id,
-                        node_type=node.type,
+                    # 4. Actualizar noderun con resultado final
+                    self.repo.update_node_run_completed(
+                        node_run_id=node_run_id,
                         status=status,
-                        started_at=node_start,
                         finished_at=node_end,
                         result=result_data or {}
                     )

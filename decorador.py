@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, UTC
 from functools import wraps
 from abc import ABC
-from Worker.strategies.base import ITask #Class component, 
+from strategies.base import ITask #Class component, 
 #Los concretecomponents son las tareas HttpGetTask, NotifyMockTask, SaveDBTask, TransformSimpleTask, ValidateCSVTask
 
 class TaskDecorator(ITask):

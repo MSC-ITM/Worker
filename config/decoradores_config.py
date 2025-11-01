@@ -1,5 +1,5 @@
 # config/decorators_config.py
-from Worker.decorador import TimeDecorator, LoggingDecorator
+from decorador import TimeDecorator, LoggingDecorator
 
 # Mapeo: tipo_de_tarea → lista de decoradores (en orden de aplicación)
 TASK_DECORATOR_MAP = {
