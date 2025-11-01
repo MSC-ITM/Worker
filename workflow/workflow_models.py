@@ -13,11 +13,16 @@ class WorkflowNode:
 class WorkflowDefinition:
     name: str
     nodes: List[WorkflowNode]
+    id: Optional[str] = None  # Workflow ID from API (e.g., "wf_abc123")
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "WorkflowDefinition":
         nodes = [WorkflowNode(**n) for n in data.get("nodes", [])]
-        return cls(name=data.get("name", "Unnamed Workflow"), nodes=nodes)
+        return cls(
+            name=data.get("name", "Unnamed Workflow"),
+            nodes=nodes,
+            id=data.get("id")
+        )
 
 @dataclass
 class WorkflowResult:

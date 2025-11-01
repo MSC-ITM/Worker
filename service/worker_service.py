@@ -8,13 +8,24 @@ import threading
 from datetime import datetime, UTC
 from typing import Optional, Dict, Any, List
 import logging, json
+import sys
+import os
+
+# Add parent directory to path to enable relative imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Fix Windows console encoding for emojis - set before any output
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 from sqlmodel import Session, select
-from Worker.Models.shared_workflow_table import workflowTable
-from Worker.workflow.workflow_engine import WorkflowEngine
-from Worker.workflow.workflow_persistence import WorkflowRepository
-from Worker.workflow.workflow_models import WorkflowNode, WorkflowDefinition
-from Worker.worker_engine import WorkerEngine
-from Worker.registry import Taskregistry
+from Models.shared_workflow_table import workflowTable
+from workflow.workflow_engine import WorkflowEngine
+from workflow.workflow_persistence import WorkflowRepository
+from workflow.workflow_models import WorkflowNode, WorkflowDefinition
+from worker_engine import WorkerEngine
+from registry import Taskregistry
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,9 +43,9 @@ class WorkerService:
     def __init__(
         self,
         shared_db_path: str = "database.db",  # ← Misma BD que usa la API
-        poll_interval: float = 10.0,
+        poll_interval: float = 3.0,  # ← Cambiado de 10.0 a 3.0 segundos para ejecución más rápida
         worker_db_path: str = "data/worker_workflows.db"  # ← BD propia del worker para logs
-        
+
     ):
         """
         Args:
@@ -63,7 +74,8 @@ class WorkerService:
         self._register_tasks()
         
         self.worker_engine = WorkerEngine(self.registry)
-        self.repo = WorkflowRepository(worker_db_path)  # BD propia para logs
+        # IMPORTANT: Use shared DB for all workflow execution records
+        self.repo = WorkflowRepository(shared_db_path)
         self.workflow_engine = WorkflowEngine(self.worker_engine, self.repo)
 
         # Estadísticas
@@ -76,7 +88,7 @@ class WorkerService:
 
         logger.info(f"[WorkerService] 🚀 Inicializado")
         logger.info(f"[WorkerService] 📁 BD compartida: {shared_db_path}")
-        logger.info(f"[WorkerService] 📁 BD Worker: {worker_db_path}")
+        logger.info(f"[WorkerService] 📁 BD usada para TODO (workflows + ejecuciones): {shared_db_path}")
         logger.info(f"[WorkerService] ⏱️  Poll interval: {poll_interval}s")
 
     def _register_tasks(self):
@@ -202,42 +214,45 @@ class WorkerService:
     def _convert_api_workflow_to_definition(self, api_workflow: Dict[str, Any]) -> WorkflowDefinition:
         """
         Convierte la estructura de workflow de la API a WorkflowDefinition del Worker.
-        
-        API: {
-            "id": "uuid",
-            "name": "workflow_name",
-            "definition": {
-                "steps": [
-                    {"type": "HTTPS GET Request", "args": {"url": "..."}}
-                ]
-            }
-        }
-        
-        Worker: WorkflowDefinition(
-            name="workflow_name",
-            nodes=[WorkflowNode(id="step_0", type="http_get", params={...})]
-        )
+
+        Soporta dos formatos:
+        1. Backend format (nodes directamente): {"nodes": [...]}
+        2. Legacy format (steps): {"steps": [...]}
         """
-        steps = api_workflow.get("definition", {}).get("steps", [])
-        nodes = []
+        definition = api_workflow.get("definition", {})
 
-        for i, step in enumerate(steps):
-            # Mapear tipo de API a tipo de Worker
-            api_type = step.get("type", "")
-            worker_type = self._map_step_type(api_type)
-
-            # Crear nodo con dependencias secuenciales
-            node = WorkflowNode(
-                id=f"step_{i}",
-                type=worker_type,
-                params=step.get("args", {}),
-                depends_on=[f"step_{i-1}"] if i > 0 else []
-            )
-            nodes.append(node)
+        # Check if definition already has nodes (Backend format)
+        if "nodes" in definition:
+            # Backend already converted to Worker format
+            nodes_data = definition["nodes"]
+            nodes = [
+                WorkflowNode(
+                    id=node.get("id"),
+                    type=node.get("type"),
+                    params=node.get("params", {}),
+                    depends_on=node.get("depends_on", [])
+                )
+                for node in nodes_data
+            ]
+        else:
+            # Legacy: Convert from steps
+            steps = definition.get("steps", [])
+            nodes = []
+            for i, step in enumerate(steps):
+                api_type = step.get("type", "")
+                worker_type = self._map_step_type(api_type)
+                node = WorkflowNode(
+                    id=f"step_{i}",
+                    type=worker_type,
+                    params=step.get("args", {}),
+                    depends_on=[f"step_{i-1}"] if i > 0 else []
+                )
+                nodes.append(node)
 
         return WorkflowDefinition(
             name=api_workflow.get("name", "unnamed_workflow"),
-            nodes=nodes
+            nodes=nodes,
+            id=api_workflow.get("id")  # Pass workflow ID
         )
 
     def _map_step_type(self, api_type: str) -> str:
@@ -392,9 +407,17 @@ class WorkerService:
         Inicia el servicio de polling de forma bloqueante.
         Útil para ejecutar como proceso principal.
         """
+        print("\n" + "="*70)
+        print("🚀 WORKER SERVICE INICIADO")
+        print("="*70)
+        print(f"📁 Base de datos: {self.shared_db_path}")
+        print(f"⏱️  Intervalo de polling: {self.poll_interval} segundos")
+        print(f"📊 Listo para procesar workflows...")
+        print("="*70 + "\n")
+
         logger.info(f"[WorkerService] 🚀 Iniciando servicio en modo bloqueante...")
         self._stop_flag = False
-        
+
         try:
             self._poll_loop()
         except KeyboardInterrupt:
@@ -438,3 +461,32 @@ class WorkerService:
     def get_stats(self) -> Dict[str, Any]:
         """Retorna estadísticas del servicio"""
         return self.stats.copy()
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description='Worker Service para ejecutar workflows')
+    parser.add_argument('--db-path', type=str, default='../data/workflows.db',
+                        help='Ruta a la base de datos SQLite compartida')
+    parser.add_argument('--poll-interval', type=float, default=3.0,
+                        help='Intervalo de polling en segundos (default: 3.0)')
+
+    args = parser.parse_args()
+
+    print("[WorkerService] Starting with database:", args.db_path)
+    print(f"[WorkerService] Polling every {args.poll_interval} seconds...")
+    print()
+
+    # Crear y iniciar servicio (el parámetro se llama shared_db_path, no db_path)
+    service = WorkerService(shared_db_path=args.db_path, poll_interval=args.poll_interval)
+
+    try:
+        service.start()
+        # Mantener el programa corriendo
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[WorkerService] Deteniendo servicio...")
+        service.stop()
+        print("[WorkerService] Servicio detenido correctamente")

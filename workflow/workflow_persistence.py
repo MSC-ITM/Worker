@@ -100,6 +100,39 @@ class WorkflowRepository:
             )
             session.add(node)
             session.commit()
+            session.refresh(node)
+            return node.id
+
+    def create_node_run_running(self, workflow_id: int, node_id: str, node_type: str, started_at: datetime):
+        """Crea un noderun en estado RUNNING al inicio de la ejecución"""
+        with Session(self.engine) as session:
+            node = NodeRun(
+                workflow_id=workflow_id,
+                node_id=node_id,
+                type=node_type,
+                status="RUNNING",
+                started_at=started_at,
+                finished_at=started_at,  # Placeholder
+                duration=0.0,
+                result_data=json_module.dumps({}, ensure_ascii=False)
+            )
+            session.add(node)
+            session.commit()
+            session.refresh(node)
+            return node.id
+
+    def update_node_run_completed(self, node_run_id: int, status: str, finished_at: datetime, result: Dict[str, Any]):
+        """Actualiza un noderun cuando termina la ejecución"""
+        result_json = json_module.dumps(result, ensure_ascii=False)
+
+        with Session(self.engine) as session:
+            node = session.get(NodeRun, node_run_id)
+            if node:
+                node.status = status
+                node.finished_at = finished_at
+                node.duration = (finished_at - node.started_at).total_seconds()
+                node.result_data = result_json
+                session.commit()
         
     def update_workflow_run(self, workflow_id: int, status: str, results: Dict[str, Any], finished_at: datetime):
         """Actualiza un workflow existente"""
