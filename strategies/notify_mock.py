@@ -3,7 +3,10 @@
 import time
 from typing import Any, Dict, List
 from Worker.strategies.base import ITask
-
+import platform
+import subprocess
+# Windows 10/11 - toast notification
+from win10toast import ToastNotifier
 
 class NotifyMockTask(ITask):
     type = "notify_mock"
@@ -15,12 +18,7 @@ class NotifyMockTask(ITask):
     params_schema = {
         "type": "object",
         "properties": {
-            "channel": {
-                "type": "string",
-                "title": "Canal de notificación",
-                "enum": ["email", "slack", "console", "webhook"],
-                "description": "Canal donde enviar la notificación"
-            },
+            "channel": "desknotification",
             "message": {
                 "type": "string",
                 "title": "Mensaje a enviar",
@@ -47,34 +45,56 @@ class NotifyMockTask(ITask):
             raise ValueError("Parámetro 'message' es obligatorio")
         
         valid_channels = ["email", "slack", "console", "webhook"]
-        if params["channel"] not in valid_channels:
-            raise ValueError(f"'channel' debe ser uno de: {valid_channels}")
+        if params["channel"] != "desknotification":
+            raise ValueError(f"'channel' debe ser desknotification")
         
         if not isinstance(params["message"], str) or len(params["message"]) == 0:
             raise ValueError("'message' debe ser string no vacío")
 
   
     def execute(self, context, params):
-        """Simula envío de notificación"""
-        try:
-            channel = params["channel"]
-            message = params["message"]
-            delay = params.get("delay", 0.5)
-            
-            # Simular delay de red
-            time.sleep(delay)
-            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        """Notificaciones nativas del sistema operativo"""
+    
+        sistema = platform.system()
+        channel = params["channel"]
+        titulo="Notificacion del Workflow"
+        mensaje = params["message"]
+        duration = 15
         
-            self.logger.info(f"📢 Notificación enviada a {channel}: {message[:50]}...")
+        try:
+            if sistema == "Windows":
+                # Windows 10/11 - toast notification
+                from win10toast import ToastNotifier
+                toaster = ToastNotifier()
+                toaster.show_toast(title=titulo, msg=mensaje, duration=duration)
+                
+            elif sistema == "Darwin":  # macOS
+                # macOS notification
+                subprocess.run([
+                    'osascript', '-e',
+                    f'display notification "{mensaje}" with title "{titulo}"'
+                ])
+                
+            elif sistema == "Linux":
+                # Linux (requiere libnotify)
+                subprocess.run([
+                    'notify-send', titulo, mensaje, '-t', str(duration * 1000)
+                ])
+                
+            else:
+                print(f"Notificación: {titulo} - {mensaje}")
+            
+            self.logger.info(f"📢 Notificación enviada a {channel}: {mensaje[:50]}...")
             
             return {
                 "sent": True,
                 "channel": channel,
-                "message": message,
-                "timestamp": timestamp,
+                "message": mensaje,
             }
+                
         except Exception as e:
-            raise RuntimeError(f"Fallo al simular notificación: {e}")
+            raise RuntimeError(f"Fallo al enviar notificación: {e}")
+        
 
     def before(self, context: Dict[str, Any], params: Dict[str, Any]) -> None:
         """Hook: Log antes"""

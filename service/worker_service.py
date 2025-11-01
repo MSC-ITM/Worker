@@ -335,7 +335,6 @@ class WorkerService:
                 logger.error(f"[WorkerService] ⚠️ No se pudo actualizar estado a 'fallido': {update_error}")
 
             self.stats["failed"] += 1
-            print(f"Aqui suma el excute: {self.stats["total_processed"]}")  
             self.stats["total_processed"] += 1
             return False
 

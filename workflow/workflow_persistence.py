@@ -110,7 +110,8 @@ class WorkflowRepository:
                 run.finished_at = finished_at
                 run.duration = (finished_at - run.started_at).total_seconds()
                 run.result_summary = json_module.dumps(
-                    {k: v.get("status", "OK") for k, v in results.items()}, 
+                    {k: (v.get("status", "OK") if isinstance(v, dict) else str(v))
+     for k, v in results.items()}, 
                     ensure_ascii=False
                 )
                 session.add(run)
