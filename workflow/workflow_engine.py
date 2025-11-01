@@ -39,13 +39,10 @@ class WorkflowEngine:
                 started_at=start_time,
                 finished_at=start_time
             )
-
         while pending:
             progress = False
-
             for node_id, node in list(pending.items()):
                 deps = node.depends_on
-
                 # Si alguna dependencia falló, saltar esta tarea
                 if any(node_status.get(dep) == "FAILED" for dep in deps):
                     print(f"[WorkflowEngine] ⚠️ Saltando nodo '{node_id}' por dependencia fallida.")
@@ -62,7 +59,7 @@ class WorkflowEngine:
                 # Ejecutar si todas las dependencias están completas
                 if all(dep in executed for dep in node.depends_on):
                     node_start = datetime.now()
-                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")                    
+                    print(f"[WorkflowEngine] ▶️ Ejecutando nodo: {node.id} ({node.type})")                   
                     command = TaskCommand(
                         run_id=f"{workflow.name}_{node.id}",
                         node_key=node.id,

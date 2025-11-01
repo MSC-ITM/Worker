@@ -278,7 +278,7 @@ def test_convert_api_workflow_to_definition_simple(worker_service):
         "definition": {
             "steps": [
                 {"type": "HTTPS GET Request", "args": {"url": "http://example.com"}},
-                {"type": "Mock Notification", "args": {"channel": "email", "message": "Done"}}
+                {"type": "Mock Notification", "args": {"channel": "desknotification", "message": "Done"}}
             ]
         }
     }
@@ -369,7 +369,7 @@ def test_execute_workflow_success(worker_service, populated_db, mocker):
     definition = {
         "steps": [
             {"type": "HTTPS GET Request", "args": {"url": "http://test.com"}},
-            {"type": "Mock Notification", "args": {"channel": "console", "message": "Test"}}
+            {"type": "Mock Notification", "args": {"channel": "desknotification", "message": "Test"}}
         ]
     }
     populated_db("wf1", "test_workflow", "en_espera", definition)
@@ -417,7 +417,7 @@ def test_execute_workflow_marks_in_progress(worker_service, populated_db, shared
     definition = {
         "steps": [
             {"type": "HTTPS GET Request", "args": {"url": "http://test.com"}},
-            {"type": "Mock Notification", "args": {"channel": "console", "message": "Test"}}
+            {"type": "Mock Notification", "args": {"channel": "desknotification", "message": "Test"}}
         ]
     }
     populated_db("wf1", "test_workflow", "en_espera", definition)
@@ -527,7 +527,7 @@ def test_worker_service_processes_multiple_workflows(worker_service, populated_d
     definition = {
         "steps": [
             {"type": "HTTPS GET Request", "args": {"url": "http://test.com"}},
-            {"type": "Mock Notification", "args": {"channel": "console", "message": "Done"}}
+            {"type": "Mock Notification", "args": {"channel": "desknotification", "message": "Done"}}
         ]
     }
     
@@ -573,7 +573,7 @@ def test_end_to_end_workflow_execution(worker_service, populated_db, shared_db_p
     definition = {
         "steps": [
             {"type": "HTTPS GET Request", "args": {"url": "http://api.example.com/data"}},
-            {"type": "Mock Notification", "args": {"channel": "email", "message": "Workflow completed"}}
+            {"type": "Mock Notification", "args": {"channel": "desknotification", "message": "Workflow completed"}}
         ]
     }
     populated_db("wf_e2e", "end_to_end_test", "en_espera", definition)

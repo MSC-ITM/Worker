@@ -70,7 +70,7 @@ def insert_success_workflow(setup_database):
             },
             {
                 "type": "Mock Notification",
-                "args": {"channel": "console", "message": "Workflow completado!"}
+                "args": {"channel": "desknotification", "message": "Workflow completado!"}
             }
         ]
     }
@@ -89,7 +89,7 @@ def insert_failed_workflow(setup_database):
             },
             {
                 "type": "Mock Notification",
-                "args": {"channel": "console", "message": "No debería ejecutarse"}
+                "args": {"channel": "desknotification", "message": "No debería ejecutarse"}
             }
         ]
     }
