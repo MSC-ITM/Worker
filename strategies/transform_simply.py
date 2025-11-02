@@ -69,12 +69,14 @@ class TransformSimpleTask(ITask):
                 # De http_get: buscar 'data' o 'body'
                 if 'data' in node_result:
                     raw_data = node_result.get('data')
+                    self.logger.info(f"🔍 raw_data es tipo: {type(raw_data).__name__}")
                     # Si 'data' es un dict con un campo 'data' interno (APIs públicas), extraerlo
                     if isinstance(raw_data, dict) and 'data' in raw_data:
                         data = raw_data['data']
-                        self.logger.info(f"✓ Datos extraídos desde campo 'data' anidado")
+                        self.logger.info(f"✓ Datos extraídos desde campo 'data' anidado. Tipo: {type(data).__name__}")
                     else:
                         data = raw_data
+                        self.logger.info(f"✓ Usando 'data' directamente. Tipo: {type(data).__name__}")
                     source_node = node_id
                     break
                 elif 'body' in node_result:
@@ -121,6 +123,9 @@ class TransformSimpleTask(ITask):
             raise ValueError(error_msg)
 
         # 2. Convertir datos a DataFrame
+        self.logger.info(f"🔍 Tipo de datos recibidos: {type(data).__name__}")
+        self.logger.info(f"🔍 Muestra de datos: {str(data)[:200]}...")
+
         try:
             if isinstance(data, list):
                 df = pd.DataFrame(data)
@@ -128,7 +133,11 @@ class TransformSimpleTask(ITask):
                 # Si es un dict, intentar convertirlo a lista
                 df = pd.DataFrame([data])
             else:
-                raise ValueError("Los datos deben ser una lista de objetos o un objeto")
+                error_msg = f"Los datos deben ser una lista de objetos o un objeto. Tipo recibido: {type(data).__name__}, Valor: {str(data)[:200]}"
+                self.logger.error(error_msg)
+                raise ValueError(error_msg)
+        except ValueError as ve:
+            raise ve
         except Exception as e:
             raise RuntimeError(f"Error procesando datos: {e}")
 
@@ -148,10 +157,35 @@ class TransformSimpleTask(ITask):
                 )
             df = df[select_columns]
 
-        # 4. Generar SQL INSERT statements
-        sql_statements = []
+        # 4. Generar CREATE TABLE statement basado en tipos de datos
         columns = list(df.columns)
         columns_str = ", ".join(columns)
+
+        # Inferir tipos de datos para CREATE TABLE
+        column_definitions = []
+        for col in columns:
+            # Obtener el tipo de dato predominante en la columna
+            sample_val = df[col].dropna().iloc[0] if len(df[col].dropna()) > 0 else None
+
+            if sample_val is None:
+                col_type = "TEXT"
+            elif isinstance(sample_val, (int, pd.Int64Dtype)):
+                col_type = "INTEGER"
+            elif isinstance(sample_val, (float, pd.Float64Dtype)):
+                col_type = "REAL"
+            else:
+                col_type = "TEXT"
+
+            column_definitions.append(f"{col} {col_type}")
+
+        create_table_statement = (
+            f"CREATE TABLE IF NOT EXISTS {table_name} (\n  "
+            + ",\n  ".join(column_definitions)
+            + "\n);"
+        )
+
+        # 5. Generar SQL INSERT statements
+        sql_statements = []
 
         for _, row in df.iterrows():
             # Escapar valores y manejar NULL
@@ -174,18 +208,22 @@ class TransformSimpleTask(ITask):
             values_str = ", ".join(values)
             sql_statements.append(f"INSERT INTO {table_name} ({columns_str}) VALUES ({values_str});")
 
-        # 5. Guardar archivo SQL en directorio data/
+        # 6. Guardar archivo SQL en directorio data/
         try:
             # Crear directorio data si no existe
             output_dir = os.path.join(os.getcwd(), "data")
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
 
-            # Generar nombre de archivo basado en tabla
+            # Generar nombre de archivo basado en tabla con timestamp único
             from datetime import datetime
+            import uuid
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            output_filename = f"{table_name}_{timestamp}.sql"
+            unique_id = uuid.uuid4().hex[:6]  # ID único de 6 caracteres
+            output_filename = f"{table_name}_{timestamp}_{unique_id}.sql"
             output_path = os.path.join(output_dir, output_filename)
+
+            self.logger.info(f"📝 Guardando archivo SQL: {output_filename}")
 
             with open(output_path, 'w', encoding='utf-8') as f:
                 # Escribir cabecera
@@ -194,6 +232,9 @@ class TransformSimpleTask(ITask):
                 f.write(f"-- Filas: {len(sql_statements)}\n")
                 f.write(f"-- Columnas: {columns_str}\n")
                 f.write(f"-- Generado: {timestamp}\n\n")
+
+                # Escribir CREATE TABLE
+                f.write(create_table_statement + "\n\n")
 
                 # Escribir statements
                 for statement in sql_statements:

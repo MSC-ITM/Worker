@@ -38,10 +38,18 @@ class HttpGetTask(ITask):
         try:
             response = requests.get(url, headers=headers, timeout=timeout)
             response.raise_for_status()
+
+            # Intentar parsear como JSON, si falla usar texto
+            try:
+                data = response.json()
+            except:
+                data = response.text[:500]  # Primeros 500 caracteres si no es JSON
+
             return {
-                "success":True,
+                "success": True,
                 "status_code": response.status_code,
-                "body": response.text[:500], # Primeros 500 caracteres
+                "data": data,  # JSON parseado o texto
+                "body": response.text[:500],  # Mantener por compatibilidad
                 "headers": dict(response.headers),
                 "url": url
             }
