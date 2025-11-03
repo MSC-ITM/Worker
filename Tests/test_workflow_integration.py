@@ -48,7 +48,6 @@ def workflow_repo(tmp_path):
     assert "noderun" in tables, f"Tabla noderun no existe. Tablas: {tables}"
     
     yield repo
-    # Cleanup se hace automáticamente con tmp_path
 
 
 @pytest.fixture

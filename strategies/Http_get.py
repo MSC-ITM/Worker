@@ -1,11 +1,13 @@
-# app/tasks/http_get.
-
 import requests
 from typing import Any, Dict, List
 from strategies.base import ITask
 
 
 class HttpGetTask(ITask):
+    """Tarea que obtiene datos de una URL"""
+    """Subclase concrete del patrón template"""
+    """Subclase  concrete component del patrón decorator"""
+    """Sublcase concrete product del patrón factory method"""
     type = "http_get"
     display_name = "HTTP GET Request"
     description = "Realiza una solicitud HTTP GET a una URL."

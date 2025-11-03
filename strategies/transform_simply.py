@@ -1,5 +1,3 @@
-# Worker/strategies/transform_simply.py
-
 import pandas as pd
 import json
 import os
@@ -9,7 +7,9 @@ from strategies.base import ITask
 
 class TransformSimpleTask(ITask):
     """Tarea para transformar JSON/CSV a SQL INSERT statements"""
-
+    """Subclase concrete del patrón template"""
+    """Subclase  concrete component del patrón decorator"""
+    """Sublcase concrete product del patrón factory method"""
     type = "transform_simple"
     display_name = "Transformar a SQL"
     description = "Convierte JSON o CSV a SQL INSERT statements"

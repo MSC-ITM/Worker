@@ -1,14 +1,15 @@
-# app/tasks/notify_mock.py
-
 import time
 from typing import Any, Dict, List
-from Worker.strategies.base import ITask
+from strategies.base import ITask
 import platform
 import subprocess
-# Windows 10/11 - toast notification
 from win10toast import ToastNotifier
 
 class NotifyMockTask(ITask):
+    """Clase para enviar una notificacion del sistema al desktop"""
+    """Subclase concrete del patrón template"""
+    """Subclase  concrete component del patrón decorator"""
+    """Sublcase concrete product del patrón factory method"""
     type = "notify_mock"
     display_name = "Notificación Simulada"
     description = "Simula enviar una notificación a un canal (por ejemplo, Slack o email)."
@@ -64,7 +65,6 @@ class NotifyMockTask(ITask):
         try:
             if sistema == "Windows":
                 # Windows 10/11 - toast notification
-                from win10toast import ToastNotifier
                 toaster = ToastNotifier()
                 toaster.show_toast(title=titulo, msg=mensaje, duration=duration)
                 

@@ -9,7 +9,12 @@ from strategies.save_db import SaveDBTask
 from strategies.transform_simply import TransformSimpleTask
 from strategies.validate_csv import ValidateCSVTask
 
-#Factory pattern
+"""Factory method doble funcion, es llamado para registrar todos las tareas a utilizar en los workflows
+Tambien es llamado para obtner la instancia de la tarea que se va a utilizar
+La clase Product es ITask
+Las clases concrete productos son las subclases de ITask: 
+HttpGetTask, NotifyMockTask, SaveDBTask,TransformSimpleTask, ValidateCSVTask
+"""
 class TaskFactory(ABC):
    
     @abstractmethod

@@ -1,4 +1,3 @@
-
 import pandas as pd
 import os
 from typing import Any, Dict, List
@@ -7,6 +6,9 @@ from strategies.base import ITask
 
 class ValidateCSVTask(ITask):
     """Tarea para validar estructura de archivos CSV"""
+    """Subclase concrete del patrón template"""
+    """Subclase  concrete component del patrón decorator"""
+    """Sublcase concrete product del patrón factory method"""
     type = "validate_csv"
     display_name = "Validar CSV"
     description = "Verifica que un archivo CSV tenga las columnas esperadas"

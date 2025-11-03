@@ -44,7 +44,7 @@ def shared_db_path(tmp_path):
     """Crea una BD compartida temporal para tests"""
     db_path = tmp_path / "test_shared.db"
 
-    # ✅ Limpiar metadata ANTES de crear tablas
+    # Limpiar metadata ANTES de crear tablas
     from sqlmodel import SQLModel
     SQLModel.metadata.clear()
     
@@ -54,9 +54,9 @@ def shared_db_path(tmp_path):
         connect_args={"check_same_thread": False}
     )
     
-   # ✅ Crear SOLO la tabla compartida en esta BD
+   # Crear tabla compartida en esta BD
     workflowTable = get_workflow_table_model()
-    workflowTable.__table__.create(engine, checkfirst=True)  # ← Crear solo esta tabla
+    workflowTable.__table__.create(engine, checkfirst=True)
     
     yield str(db_path)
     
@@ -78,7 +78,6 @@ def workflow_repo_for_tests(worker_db_path):
     
     repo = WorkflowRepository(worker_db_path)
     
-    # ✅ CRÍTICO: Asegurar que las tablas se crean
     SQLModel.metadata.create_all(repo.engine)
     
     return repo
@@ -220,7 +219,7 @@ def test_update_workflow_status_success(worker_service, populated_db):
     
     # Verificar cambio
     pending = worker_service._get_pending_workflows_from_db()
-    assert len(pending) == 0  # Ya no está pendiente
+    assert len(pending) == 0 
 
 
 def test_update_workflow_status_with_results(worker_service, populated_db, shared_db_path):

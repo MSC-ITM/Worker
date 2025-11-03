@@ -7,6 +7,7 @@ class Taskregistry():
     """
     Implementa el Factory Method para crear catálogo de estrategias de tareas disponibles en el sistema.
     Permite registrar y crear instancias de tareas concretas.
+    El metodo create implementa factory method para obtener la instancia a utilizar
     """
 
     def __init__(self):

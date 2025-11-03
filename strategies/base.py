@@ -17,7 +17,9 @@ class ITask(ABC):
     3. Implementar `execute()` → realiza la lógica principal de la tarea.
     4. (Opcional) Sobrescribir `on_error()` si necesitan manejo de errores personalizado.
     """
-
+    """Cumple otras funciones como Class component del patrón decorator
+    Tambien tiene la funcion de Class product en el patrón Factory Method
+    """
     
     # ========== METADATOS DE LA TAREA ==========
     # Estos deben ser definidos por cada subclase

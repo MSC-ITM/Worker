@@ -43,7 +43,7 @@ class WorkerService:
     def __init__(
         self,
         shared_db_path: str = "database.db",  # ← Misma BD que usa la API
-        poll_interval: float = 3.0,  # ← Cambiado de 10.0 a 3.0 segundos para ejecución más rápida
+        poll_interval: float = 3.0, 
         worker_db_path: str = "data/worker_workflows.db"  # ← BD propia del worker para logs
 
     ):
@@ -57,7 +57,7 @@ class WorkerService:
         self.poll_interval = poll_interval
         self._stop_flag = False
         self._polling_thread: Optional[threading.Thread] = None
-        self._is_stopped = False  # ✅ AGREGAR: Flag para evitar múltiples stops
+        self._is_stopped = False  
 
         # Importar el modelo de la API
         from sqlmodel import create_engine, SQLModel
@@ -74,7 +74,6 @@ class WorkerService:
         self._register_tasks()
         
         self.worker_engine = WorkerEngine(self.registry)
-        # IMPORTANT: Use shared DB for all workflow execution records
         self.repo = WorkflowRepository(shared_db_path)
         self.workflow_engine = WorkflowEngine(self.worker_engine, self.repo)
 
@@ -111,22 +110,6 @@ class WorkerService:
         Returns:
             Lista de workflows con estado 'en_espera'
         """
-        # Importar el modelo de la API (WorkflowTable)
-        # from sqlmodel import SQLModel, Field as SQLField
-        # import json
-        
-        # class WorkflowTable(SQLModel, table=True):
-        #     """Modelo idéntico al de la API"""
-        #     __tablename__ = "workflowtable"
-        #     __table_args__ = {"extend_existing": True}
-            
-        #     id: str = SQLField(primary_key=True, index=True)
-        #     name: str
-        #     status: str
-        #     created_at: str
-        #     updated_at: str
-        #     definition: Optional[str] = None
-
         try:
             with Session(self.shared_engine) as session:
                 # Buscar workflows con estado 'en_espera'
@@ -166,20 +149,7 @@ class WorkerService:
         Returns:
             True si se actualizó exitosamente
         """
-        # from sqlmodel import SQLModel, Field as SQLField
-        # import json
-        
-        # class WorkflowTable(SQLModel, table=True):
-        #     """Modelo idéntico al de la API"""
-        #     __tablename__ = "workflowtable"
-        #     __table_args__ = {"extend_existing": True}
-            
-        #     id: str = SQLField(primary_key=True)
-        #     name: str
-        #     status: str
-        #     created_at: str
-        #     definition: Optional[str] = None
-
+       
         try:
             with Session(self.shared_engine) as session:
                 stmt = select(workflowTable).where(workflowTable.id == workflow_id)
@@ -252,7 +222,7 @@ class WorkerService:
         return WorkflowDefinition(
             name=api_workflow.get("name", "unnamed_workflow"),
             nodes=nodes,
-            id=api_workflow.get("id")  # Pass workflow ID
+            id=api_workflow.get("id") 
         )
 
     def _map_step_type(self, api_type: str) -> str:
@@ -429,7 +399,6 @@ class WorkerService:
         Detiene el servicio de polling.
         """
         if self._is_stopped:
-            # ✅ Mostrar desde dónde se llamó
             import traceback
             logger.warning("[WorkerService] ⚠️ stop() llamado múltiples veces desde:")
             logger.warning("".join(traceback.format_stack()))
@@ -450,7 +419,6 @@ class WorkerService:
         
         # Cleanup
         self.registry.clear()
-         # 💡 Cerrar conexiones abiertas
         try:
             self.shared_engine.dispose()
             self.repo.engine.dispose()

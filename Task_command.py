@@ -1,4 +1,3 @@
-#Task_command
 from dataclasses import dataclass, field
 from typing import Any, Dict
 
@@ -6,7 +5,6 @@ from typing import Any, Dict
 class TaskCommand:
     """
     Representa una instrucción para ejecutar una tarea en el Worker.
-    Forma parte del patrón Command.
     """
 
     run_id: str                     # ID de ejecución del flujo

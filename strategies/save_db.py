@@ -1,5 +1,3 @@
-# Worker/strategies/save_db.py
-
 import sqlite3
 import os
 from typing import Any, Dict, List
@@ -8,7 +6,9 @@ from strategies.base import ITask
 
 class SaveDBTask(ITask):
     """Tarea para ejecutar archivo SQL generado por transform_simple en SQLite"""
-
+    """Subclase concrete del patrón template"""
+    """Subclase  concrete component del patrón decorator"""
+    """Sublcase concrete product del patrón factory method"""
     type = "save_db"
     display_name = "Guardar en Base de Datos"
     description = "Ejecuta archivo SQL generado por transform_simple en base de datos SQLite"

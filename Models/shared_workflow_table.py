@@ -1,4 +1,3 @@
-# Worker/models/shared_workflow_table.py
 from sqlmodel import SQLModel, Field
 
 class workflowTable(SQLModel, table=True):

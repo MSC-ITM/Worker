@@ -7,12 +7,12 @@ from datetime import datetime, UTC
 from functools import wraps
 from abc import ABC
 from strategies.base import ITask #Class component, 
-#Los concretecomponents son las tareas HttpGetTask, NotifyMockTask, SaveDBTask, TransformSimpleTask, ValidateCSVTask
 
 class TaskDecorator(ITask):
     """
     Decorator:Clase base para los decoradores de tareas.
-    Implementa la misma interfaz que BaseTask (ITask) para poder anidarse.
+    Implementa la misma interfaz de BaseTask (ITask como Class component) para poder anidarse.
+    Las concrete components son las tareas HttpGetTask, NotifyMockTask, SaveDBTask, TransformSimpleTask, ValidateCSVTask
     """
     def __init__(self, wrapped_task: ITask):
         """
