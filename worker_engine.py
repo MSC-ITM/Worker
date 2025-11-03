@@ -11,7 +11,7 @@ class WorkerEngine:
         self.registry = registry
     """
     Orquestador principal de ejecución de tareas (Worker). Ejecuta comandos encolados
-    Aplica decoradores de forma automática para instrumentar las tareas.
+    Aplica decoradores de forma automática para instrumentar las tareas.    
     """
     def _apply_decorators(self, task, task_id:str):
         """Aplica decoradores según el tipo de tarea."""
